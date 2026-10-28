@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="format-detection" content="telephone=no">
+<title>💗 有份小惊喜</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { width:100%; height:100%; overflow:hidden; }
+  body {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    font-family:'PingFang SC','Microsoft YaHei','微软雅黑',sans-serif;
+    background:linear-gradient(135deg,#ffe6f0 0%,#e8f0ff 45%,#fff6e0 100%);
+    user-select:none; -webkit-user-select:none; overscroll-behavior:none;
+  }
+  #stage { position:fixed; top:0; left:0; right:0; bottom:0; overflow:hidden; }
+  .win {
+    position:absolute; border-radius:10px; box-shadow:0 6px 18px rgba(0,0,0,.18);
+    overflow:hidden; animation:pop .25s ease-out;
+    display:flex; flex-direction:column;
+  }
+  @keyframes pop { from { transform:scale(.3); opacity:0; } to { transform:scale(1); opacity:1; } }
+  .win .bar {
+    height:20px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between;
+    padding:0 4px 0 8px; background:rgba(255,255,255,.45);
+    font-size:11px; color:#555; cursor:move; touch-action:none;
+  }
+  .win .bar .x {
+    width:16px; height:16px; border:none; border-radius:50%;
+    background:rgba(0,0,0,.12); color:#555; font-size:11px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .win .body {
+    flex:1; display:flex; align-items:center; justify-content:center;
+    font-weight:bold; color:#333; padding:2px 6px; text-align:center;
+  }
+  .win.fading { animation:bye .18s ease-in forwards; }
+  @keyframes bye { to { transform:scale(.2); opacity:0; } }
+  #startMask, #endMask {
+    position:fixed; top:0; left:0; right:0; bottom:0; z-index:100;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:18px; text-align:center; padding:24px;
+    background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.85), rgba(255,227,239,.8));
+  }
+  #endMask { display:none; }
+  #startMask h1, #endMask h1 { font-size:34px; color:#e0568f; }
+  #startMask p, #endMask p { font-size:16px; color:#777; line-height:1.8; }
+  .btn {
+    border:none; border-radius:999px; padding:14px 46px; font-size:18px; font-weight:bold;
+    color:#fff; background:linear-gradient(135deg,#ff8fb3,#ff5f8f);
+    box-shadow:0 8px 20px rgba(255,95,143,.4); cursor:pointer;
+    animation:beat 1.2s infinite; touch-action:manipulation;
+  }
+  @keyframes beat { 0%,100% { transform:scale(1); } 50% { transform:scale(1.06); } }
+  .btn:active { transform:scale(.96); }
+  #quitBtn {
+    position:fixed; right:10px; bottom:14px; z-index:200; display:none;
+    border:1px solid rgba(0,0,0,.15); background:rgba(255,255,255,.75);
+    color:#888; border-radius:999px; padding:6px 14px; font-size:13px; cursor:pointer;
+    touch-action:manipulation;
+  }
+  .hint { font-size:13px; color:#bbb; line-height:1.6; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="startMask">
+  <h1>💗 有份小惊喜</h1>
+  <p>点“开始”后，屏幕会被祝福占满<br>建议打开音量哦</p>
+  <button class="btn" id="startBtn">点击开始</button>
+  <div class="hint">小窗口可以拖动，点窗口右上角 × 可以关掉它</div>
+</div>
+
+<div id="endMask">
+  <h1>💌 送给你</h1>
+  <p>好好吃饭，好好爱自己<br>今天也要开心呀</p>
+  <button class="btn" id="againBtn">再来一次</button>
+</div>
+
+<button id="quitBtn">✕ 结束动画</button>
+
+<script>
+(function () {
+  'use strict';
+  var tips = ['学业有成','好好爱自己','好好吃饭','保持好心情','身体健康','顺顺利利','别熬夜','天凉了多穿衣服'];
+  var colors = ['#FFC0CB','#ADD8E6','#90EE90','#FFFACD','#FF69B4','#87CEEB'];
+
+  var stage = document.getElementById('stage');
+  var startMask = document.getElementById('startMask');
+  var endMask = document.getElementById('endMask');
+  var quitBtn = document.getElementById('quitBtn');
+  var timers = [];
+  var windows = [];
+  var running = false;
+  var audio = null;
+
+  function sizeWin() {
+    var sw = window.innerWidth, sh = window.innerHeight;
+    var w = sw < 600 ? Math.max(88, Math.round(sw * 0.24)) : 150;
+    var h = sw < 600 ? 42 : 60;
+    return { sw: sw, sh: sh, w: w, h: h };
+  }
+
+  function makeWin(x, y, text) {
+    var d = sizeWin();
+    var win = document.createElement('div');
+    win.className = 'win';
+    win.style.left = Math.round(x) + 'px';
+    win.style.top = Math.round(y) + 'px';
+    win.style.width = d.w + 'px';
+    win.style.height = d.h + 'px';
+    win.style.background = colors[Math.floor(Math.random() * colors.length)];
+    win.style.transform = 'rotate(' + (Math.random() * 4 - 2).toFixed(1) + 'deg)';
+    win.style.zIndex = 10 + (windows.length % 60);
+
+    var bar = document.createElement('div');
+    bar.className = 'bar';
+    var t = document.createElement('span');
+    t.textContent = '提示';
+    var xb = document.createElement('button');
+    xb.className = 'x';
+    xb.textContent = '×';
+    bar.appendChild(t);
+    bar.appendChild(xb);
+
+    var body = document.createElement('div');
+    body.className = 'body';
+    body.textContent = text;
+    body.style.fontSize = (d.w < 150 ? 13 : 16) + 'px';
+
+    win.appendChild(bar);
+    win.appendChild(body);
+    stage.appendChild(win);
+    windows.push(win);
+
+    makeDraggable(win, bar);
+    xb.addEventListener('click', function (e) {
+      e.stopPropagation();
+      removeWin(win, true);
+    });
+    return win;
+  }
+
+  function removeWin(win, instant) {
+    var i = windows.indexOf(win);
+    if (i > -1) windows.splice(i, 1);
+    if (!win.parentNode) return;
+    if (instant) { win.parentNode.removeChild(win); return; }
+    win.classList.add('fading');
+    later(function () { if (win.parentNode) win.parentNode.removeChild(win); }, 190);
+  }
+
+  function makeDraggable(win, bar) {
+    function onStart(e) {
+      e.preventDefault();
+      var sx = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+      var sy = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+      var ox = win.offsetLeft, oy = win.offsetTop;
+      function onMove(ev) {
+        ev.preventDefault();
+        var cx = ev.clientX !== undefined ? ev.clientX : ev.touches[0].clientX;
+        var cy = ev.clientY !== undefined ? ev.clientY : ev.touches[0].clientY;
+        win.style.left = Math.max(0, Math.min(window.innerWidth - win.offsetWidth, ox + cx - sx)) + 'px';
+        win.style.top = Math.max(0, Math.min(window.innerHeight - win.offsetHeight, oy + cy - sy)) + 'px';
+      }
+      function onEnd() {
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onEnd);
+        document.removeEventListener('touchmove', onMove);
+        document.removeEventListener('touchend', onEnd);
+      }
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onEnd);
+      document.addEventListener('touchmove', onMove, { passive: false });
+      document.addEventListener('touchend', onEnd);
+    }
+    if (window.PointerEvent) {
+      bar.addEventListener('pointerdown', onStart);
+    } else {
+      bar.addEventListener('touchstart', onStart, { passive: false });
+    }
+  }
+
+  function heartPoints(n, sw, sh) {
+    var d = sizeWin();
+    var scale = Math.min(20, Math.min(sw * 0.85 / 32, sh * 0.85 / 22));
+    var pts = [];
+    for (var i = 0; i < n; i++) {
+      var t = i / n * 2 * Math.PI;
+      var x = 16 * Math.pow(Math.sin(t), 3);
+      var y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+      var sx = sw / 2 + x * scale - d.w / 2;
+      var sy = sh / 2 - y * scale - d.h / 2;
+      sx = Math.max(0, Math.min(sx, sw - d.w));
+      sy = Math.max(0, Math.min(sy, sh - d.h));
+      pts.push([Math.round(sx), Math.round(sy)]);
+    }
+    return pts;
+  }
+
+  function every(fn, ms) { var id = setInterval(fn, ms); timers.push(id); return id; }
+  function later(fn, ms) { var id = setTimeout(fn, ms); timers.push(id); return id; }
+  function clearAllTimers() {
+    timers.forEach(function (id) { clearInterval(id); clearTimeout(id); });
+    timers = [];
+  }
+
+  function start() {
+    if (running) return;
+    running = true;
+    startMask.style.display = 'none';
+    quitBtn.style.display = 'block';
+    tryMusic();
+
+    // 第一步：按心形坐标依次弹出小窗口，最后一个写着“我喜欢你”
+    var d = sizeWin();
+    var pts = heartPoints(100, d.sw, d.sh);
+    var i = 0;
+    every(function () {
+      if (i >= pts.length) {
+        clearAllTimers();
+        later(function () { closeAll(true); fillScreen(); }, 1000);
+        return;
+      }
+      var tip = (i === pts.length - 1) ? '我喜欢你' : tips[Math.floor(Math.random() * tips.length)];
+      makeWin(pts[i][0], pts[i][1], tip);
+      i++;
+    }, 30);
+  }
+
+  function closeAll(instant) {
+    windows.slice().forEach(function (w) { removeWin(w, instant); });
+  }
+
+  // 第二步：随机铺满整个屏幕的祝福弹窗，保持 10 秒后逐一关闭
+  function fillScreen() {
+    var d = sizeWin();
+    var count = Math.floor(d.sw / d.w) * Math.floor(d.sh / 40) + 50;
+    var i = 0;
+    every(function () {
+      if (i >= count) {
+        clearAllTimers();
+        later(function () {
+          var list = windows.slice();
+          var interval = list.length ? 1000 / list.length : 0;
+          var j = 0;
+          every(function () {
+            if (j >= list.length) { clearAllTimers(); finish(); return; }
+            removeWin(list[j], false);
+            j++;
+          }, Math.max(interval, 12));
+        }, 10000);
+        return;
+      }
+      var x = Math.random() * (d.sw - d.w);
+      var y = Math.random() * (d.sh - d.h);
+      makeWin(x, y, tips[Math.floor(Math.random() * tips.length)]);
+      i++;
+    }, 6);
+  }
+
+  function finish() {
+    running = false;
+    stopMusic();
+    quitBtn.style.display = 'none';
+    endMask.style.display = 'flex';
+  }
+
+  function stopAll() {
+    if (!running) return;
+    running = false;
+    clearAllTimers();
+    closeAll(true);
+    stopMusic();
+    quitBtn.style.display = 'none';
+    endMask.style.display = 'flex';
+  }
+
+  function tryMusic() {
+    try {
+      audio = new Audio('music.mp3');
+      audio.loop = true;
+      audio.volume = 0.6;
+      var p = audio.play();
+      if (p && p.catch) p.catch(function () { audio = null; });
+    } catch (e) { audio = null; }
+  }
+
+  function stopMusic() {
+    if (audio) {
+      try { audio.pause(); } catch (e) {}
+      audio = null;
+    }
+  }
+
+  document.getElementById('startBtn').addEventListener('click', start);
+  document.getElementById('againBtn').addEventListener('click', function () { location.reload(); });
+  quitBtn.addEventListener('click', stopAll);
+  document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+})();
+</script>
+</body>
+</html>
