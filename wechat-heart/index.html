@@ -4,14 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="format-detection" content="telephone=no">
-<title>💗 有份小惊喜</title>
+<title>🎂 小迟生日快乐</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html, body { width:100%; height:100%; overflow:hidden; }
   body {
     position:fixed; top:0; left:0; right:0; bottom:0;
     font-family:'PingFang SC','Microsoft YaHei','微软雅黑',sans-serif;
-    background:linear-gradient(135deg,#ffe6f0 0%,#e8f0ff 45%,#fff6e0 100%);
+    background:linear-gradient(135deg,#fff6e5 0%,#ffe3ee 45%,#fff0c2 100%);
     user-select:none; -webkit-user-select:none; overscroll-behavior:none;
   }
   #stage { position:fixed; top:0; left:0; right:0; bottom:0; overflow:hidden; }
@@ -59,14 +59,23 @@
     color:#888; border-radius:999px; padding:6px 14px; font-size:13px; cursor:pointer;
     touch-action:manipulation;
   }
+  .deco { position:fixed; opacity:.25; z-index:1; pointer-events:none; user-select:none; animation:floaty 5s ease-in-out infinite; }
+  @keyframes floaty { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-18px); } }
 </style>
 </head>
 <body>
 <div id="stage"></div>
 
+<div class="deco" style="left:6%;top:8%;font-size:46px">🎂</div>
+<div class="deco" style="right:8%;top:14%;font-size:40px;animation-delay:.8s">🎈</div>
+<div class="deco" style="left:12%;bottom:12%;font-size:42px;animation-delay:1.6s">🎁</div>
+<div class="deco" style="right:10%;bottom:10%;font-size:38px;animation-delay:2.4s">🎉</div>
+<div class="deco" style="left:45%;top:5%;font-size:36px;animation-delay:3.2s">🍰</div>
+<div class="deco" style="right:30%;bottom:6%;font-size:34px;animation-delay:4s">🎈</div>
+
 <div id="endMask">
-  <h1>💌 送给你</h1>
-  <p>好好吃饭，好好爱自己<br>今天也要开心呀</p>
+  <h1>🎂 小迟生日快乐！</h1>
+  <p>身体健康，天天开心<br>所有的祝福都送给你</p>
   <button class="btn" id="againBtn">再来一次</button>
 </div>
 
@@ -75,8 +84,8 @@
 <script>
 (function () {
   'use strict';
-  var tips = ['学业有成','好好爱自己','好好吃饭','保持好心情','身体健康','顺顺利利','别熬夜','天凉了多穿衣服'];
-  var colors = ['#FFC0CB','#ADD8E6','#90EE90','#FFFACD','#FF69B4','#87CEEB'];
+  var tips = ['身体健康','好好吃饭','天天开心','别老熬夜','天冷了多穿点','别感冒','好好爱自己'];
+  var colors = ['#FFC0CB','#FFE4B5','#98FB98','#FFFACD','#FFB6C1','#FFDAB9'];
 
   var stage = document.getElementById('stage');
   var endMask = document.getElementById('endMask');
@@ -93,22 +102,25 @@
     return { sw: sw, sh: sh, w: w, h: h };
   }
 
-  function makeWin(x, y, text) {
+  function makeWin(x, y, text, opts) {
+    opts = opts || {};
     var d = sizeWin();
+    var w = opts.w || d.w;
+    var h = opts.h || d.h;
     var win = document.createElement('div');
     win.className = 'win';
     win.style.left = Math.round(x) + 'px';
     win.style.top = Math.round(y) + 'px';
-    win.style.width = d.w + 'px';
-    win.style.height = d.h + 'px';
-    win.style.background = colors[Math.floor(Math.random() * colors.length)];
+    win.style.width = w + 'px';
+    win.style.height = h + 'px';
+    win.style.background = opts.bg || colors[Math.floor(Math.random() * colors.length)];
     win.style.transform = 'rotate(' + (Math.random() * 4 - 2).toFixed(1) + 'deg)';
     win.style.zIndex = 10 + (windows.length % 60);
 
     var bar = document.createElement('div');
     bar.className = 'bar';
     var t = document.createElement('span');
-    t.textContent = '提示';
+    t.textContent = '祝福';
     var xb = document.createElement('button');
     xb.className = 'x';
     xb.textContent = '×';
@@ -118,7 +130,7 @@
     var body = document.createElement('div');
     body.className = 'body';
     body.textContent = text;
-    body.style.fontSize = (d.w < 150 ? 13 : 16) + 'px';
+    body.style.fontSize = (opts.fontSize || (d.w < 150 ? 13 : 16)) + 'px';
 
     win.appendChild(bar);
     win.appendChild(body);
@@ -202,18 +214,27 @@
     running = true;
     quitBtn.style.display = 'block';
 
-    // 第一步：按心形坐标依次弹出小窗口，最后一个写着“我喜欢你”
+    // 第一步：按心形坐标依次弹出小窗口，最后一片是生日祝福主卡
     var d = sizeWin();
     var pts = heartPoints(100, d.sw, d.sh);
     var i = 0;
     every(function () {
       if (i >= pts.length) {
         clearAllTimers();
-        later(function () { closeAll(true); fillScreen(); }, 1000);
+        later(function () { closeAll(true); fillScreen(); }, 5000);
         return;
       }
-      var tip = (i === pts.length - 1) ? '我喜欢你' : tips[Math.floor(Math.random() * tips.length)];
-      makeWin(pts[i][0], pts[i][1], tip);
+      if (i === pts.length - 1) {
+        // 最后一片卡片：小迟生日快乐！（加宽加大、单独配色）
+        var bigW = d.sw < 600 ? Math.max(170, Math.round(d.sw * 0.46)) : 200;
+        var bigH = d.sw < 600 ? 46 : 64;
+        var bx = Math.max(0, Math.min(pts[i][0] - (bigW - d.w) / 2, d.sw - bigW));
+        var by = Math.max(0, Math.min(pts[i][1] - (bigH - d.h) / 2, d.sh - bigH));
+        makeWin(bx, by, '🎂 小迟生日快乐！', { w: bigW, h: bigH, fontSize: d.sw < 600 ? 15 : 18, bg: '#FFB6C1' });
+        i++;
+        return;
+      }
+      makeWin(pts[i][0], pts[i][1], tips[Math.floor(Math.random() * tips.length)]);
       i++;
     }, 30);
   }

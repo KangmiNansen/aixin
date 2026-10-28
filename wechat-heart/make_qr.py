@@ -71,8 +71,8 @@ try:
     d.ellipse([-60, H - 140, 300, H + 120], fill="#FFD6E7")
     d.ellipse([W - 320, H - 200, W + 60, H + 100], fill="#DCE9FF")
 
-    d.text((W / 2, 150), "有份小惊喜", font=f_big, fill="#E0568F", anchor="mm")
-    d.text((W / 2, 240), "用微信「扫一扫」打开", font=f_mid, fill="#888888", anchor="mm")
+    d.text((W / 2, 150), "小迟生日快乐", font=f_big, fill="#E0568F", anchor="mm")
+    d.text((W / 2, 240), "扫码有惊喜", font=f_mid, fill="#888888", anchor="mm")
 
     box = ((W - 600) // 2, 300, (W - 600) // 2 + 600, 900)
     d.rectangle(box, outline="#F3C6DA", width=4)
@@ -80,7 +80,7 @@ try:
 
     short = URL if len(URL) <= 52 else URL[:49] + "…"
     d.text((W / 2, 980), short, font=f_small, fill="#B9B9B9", anchor="mm")
-    d.text((W / 2, 1060), "长按图片也可识别 · 点开始运行", font=f_small, fill="#B9B9B9", anchor="mm")
+    d.text((W / 2, 1060), "长按图片也可识别 · 打开自动播放", font=f_small, fill="#B9B9B9", anchor="mm")
 
     card.save(POSTER_PATH)
     print("扫码卡片已生成:", POSTER_PATH)
