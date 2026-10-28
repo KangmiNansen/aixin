@@ -37,15 +37,14 @@
   }
   .win.fading { animation:bye .18s ease-in forwards; }
   @keyframes bye { to { transform:scale(.2); opacity:0; } }
-  #startMask, #endMask {
+  #endMask {
     position:fixed; top:0; left:0; right:0; bottom:0; z-index:100;
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
     gap:18px; text-align:center; padding:24px;
     background:radial-gradient(circle at 50% 35%, rgba(255,255,255,.85), rgba(255,227,239,.8));
   }
-  #endMask { display:none; }
-  #startMask h1, #endMask h1 { font-size:34px; color:#e0568f; }
-  #startMask p, #endMask p { font-size:16px; color:#777; line-height:1.8; }
+  #endMask h1 { font-size:34px; color:#e0568f; }
+  #endMask p { font-size:16px; color:#777; line-height:1.8; }
   .btn {
     border:none; border-radius:999px; padding:14px 46px; font-size:18px; font-weight:bold;
     color:#fff; background:linear-gradient(135deg,#ff8fb3,#ff5f8f);
@@ -60,18 +59,10 @@
     color:#888; border-radius:999px; padding:6px 14px; font-size:13px; cursor:pointer;
     touch-action:manipulation;
   }
-  .hint { font-size:13px; color:#bbb; line-height:1.6; }
 </style>
 </head>
 <body>
 <div id="stage"></div>
-
-<div id="startMask">
-  <h1>💗 有份小惊喜</h1>
-  <p>点“开始”后，屏幕会被祝福占满<br>建议打开音量哦</p>
-  <button class="btn" id="startBtn">点击开始</button>
-  <div class="hint">小窗口可以拖动，点窗口右上角 × 可以关掉它</div>
-</div>
 
 <div id="endMask">
   <h1>💌 送给你</h1>
@@ -88,7 +79,6 @@
   var colors = ['#FFC0CB','#ADD8E6','#90EE90','#FFFACD','#FF69B4','#87CEEB'];
 
   var stage = document.getElementById('stage');
-  var startMask = document.getElementById('startMask');
   var endMask = document.getElementById('endMask');
   var quitBtn = document.getElementById('quitBtn');
   var timers = [];
@@ -210,9 +200,7 @@
   function start() {
     if (running) return;
     running = true;
-    startMask.style.display = 'none';
     quitBtn.style.display = 'block';
-    tryMusic();
 
     // 第一步：按心形坐标依次弹出小窗口，最后一个写着“我喜欢你”
     var d = sizeWin();
@@ -280,12 +268,30 @@
 
   function tryMusic() {
     try {
-      audio = new Audio('music.mp3');
-      audio.loop = true;
-      audio.volume = 0.6;
+      if (!audio) {
+        audio = new Audio('music.mp3');
+        audio.loop = true;
+        audio.volume = 0.6;
+      }
       var p = audio.play();
-      if (p && p.catch) p.catch(function () { audio = null; });
-    } catch (e) { audio = null; }
+      if (p && p.catch) p.catch(function () { /* 自动播放被拦截，等首次触摸后重试 */ });
+    } catch (e) {}
+  }
+
+  // 微信/手机浏览器会拦截自动播放的音乐：首次触摸屏幕后自动再试一次
+  function enableMusicOnTouch() {
+    var done = false;
+    function retry() {
+      if (done) return;
+      done = true;
+      tryMusic();
+      document.removeEventListener('touchstart', retry);
+      document.removeEventListener('pointerdown', retry);
+      document.removeEventListener('click', retry);
+    }
+    document.addEventListener('touchstart', retry, { passive: true });
+    document.addEventListener('pointerdown', retry, { passive: true });
+    document.addEventListener('click', retry);
   }
 
   function stopMusic() {
@@ -295,10 +301,14 @@
     }
   }
 
-  document.getElementById('startBtn').addEventListener('click', start);
   document.getElementById('againBtn').addEventListener('click', function () { location.reload(); });
   quitBtn.addEventListener('click', stopAll);
   document.addEventListener('gesturestart', function (e) { e.preventDefault(); });
+
+  // 扫码打开后立即自动运行，无需任何点击
+  tryMusic();
+  enableMusicOnTouch();
+  start();
 })();
 </script>
 </body>
